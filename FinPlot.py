@@ -12,6 +12,7 @@
 import pandas as pd
 import pandas_ta as ta
 import yfinance as yf
+import datetime
 
 #import matplotlib.pyplot as plt
 
@@ -73,7 +74,7 @@ class FinPlot():
             print('Getting data from CSV')
             # Try to get the file and if it doesn't exist issue a warning
             try:
-                self.df = pd.read_csv(kwargs['file'], index_col=0)
+                self.df = pd.read_csv(kwargs['file'], index_col=0, parse_dates=True)
             except FileNotFoundError:
                 print("File Doesn't Exist")
             else:
@@ -84,7 +85,7 @@ class FinPlot():
             print('Getting data from CSV')
             # Try to get the file and if it doesn't exist issue a warning
             try:
-                self.df = pd.read_csv(kwargs['folder'] + self.symbol + '.csv' , index_col=0)
+                self.df = pd.read_csv(kwargs['folder'] + self.symbol + '.csv' , index_col=0, parse_dates=True)
             except FileNotFoundError:
                 print("File Doesn't Exist")
             else:
@@ -93,19 +94,35 @@ class FinPlot():
         #default is to read directly from yahoo finance via pandas_ta
         else:
             print('Getting data from yfinance')
-
+            
             #default values check, will use 5y / 1d values, ELSE use given date time frame
             if kwargs.get('default', True) is True:
                 print('Using default values, 5Y and 1d')
-                self.df = self.df.ta.ticker(self.symbol, period=self.period, interval=self.interval)
+                
+                self.df = self.df.ta.ticker(self.symbol, period=self.period)
+                
             else:
                 self.df = self.df.ta.ticker(self.symbol, start=self.start, end=self.end)
         
         #append cummulitive gains to df
         #self.df.ta.log_return(cumulative=True, append=True)
         
-    def save_data (self, folder):
+    def save_data (self, folder, **kwargs):
+        """
+        Saves the data to a CSV files at a folder location 
+        
+        keys:
+            all=True  save all data or just the     
 
+        Args:
+            (foldername) - saves all data to <Folder>/symbol.csv
+
+            (foldername, all=False) - saves only core data to <Folder>/symbol.csv
+         
+        
+        """ 
+        
+        
         try:
             file = folder + self.symbol.replace(".", "_") + '.csv'
             self.df.to_csv(file)
@@ -159,7 +176,7 @@ class FinPlot():
 
 
 
-    def get_fill_color(label):
+    def get_fill_color(self, label):
         ''' Create fill colors of green and red for ichimoku plots '''
 
 
@@ -172,24 +189,24 @@ class FinPlot():
 
 
 
-    def plot_ichimoku(self):
+    def plot_ichimoku(self, **kwargs):
+        """
+        Retrieves Ichimoku Data and plots
+        
+        keys:
+            forward=True  plot the projected spans
+            
+            timespan=True  plot all data vs limits given
 
+        Args:
+            () - plots all data in data frame
+            
+        
+        """ 
+        
+        ### TODO add in time limits if requested
 
-
-
-
-
-
-
-
-
-        #   ICS_26 - Chikou span -Lagging Span = Price shifted back 26 periods
-        #   IKS_26 - Kijun-sen - Base Line = (Highest Value in period + Lowest value in period)/2 (26 Sessions)
-        #   ITS_9 - Tenkan-sen - Conversion Line = (Highest Value in period + Lowest value in period)/2 (9 Sessions)
-
-        #   ISA_9 - Senkou span A - Leading Span A = (Conversion Value + Base Value)/2 (26 Sessions)
-        #   ISB_26 - Senkou Span B - Leading Span B = (Conversion Value + Base Value)/2 (52 Sessions)
-
+    
     
         #regular candle sticks
         #candle = go.Candlestick(x=df.index, open=df['Open'],high=df['High'], low=df["Low"], close=df['Close'], name="Candlestick")
@@ -197,14 +214,26 @@ class FinPlot():
 
         #generate ichimoko data points append to df
         self.df.ta.ichimoku(append=True)
-        
+        #   ICS_26 - Chikou span -Lagging Span = Price shifted back 26 periods
+        #   IKS_26 - Kijun-sen - Base Line = (Highest Value in period + Lowest value in period)/2 (26 Sessions)
+        #   ITS_9 - Tenkan-sen - Conversion Line = (Highest Value in period + Lowest value in period)/2 (9 Sessions)
+        #   ISA_9 - Senkou span A - Leading Span A = (Conversion Value + Base Value)/2 (26 Sessions)
+        #   ISB_26 - Senkou Span B - Leading Span B = (Conversion Value + Base Value)/2 (52 Sessions)
+
+
         #the forward ichimoku span A and B 
-        df_fw = df.ta.ichimoku()[1]
+        df_fw = pd.DataFrame()
+        df_fw = self.df.ta.ichimoku()[1]
 
-        #generate working copy of DF for clouds
-        df, df1 = self.df.copy()
-        #df1 = df.copy()
 
+        #add RSI (14) data to the dataframe
+        self.df.ta.rsi(append=True)
+
+
+        #generate working copy of DF for clouds & df1 copy for plotting
+        df = self.df.copy()
+        df1 = self.df.copy()
+        
 
         #Create a figure object of 2 subplots        
         fig = make_subplots(rows=2, cols=1, subplot_titles=(f"Ichimoku Plot of {self.symbol}", "RSI"), row_heights=[0.7, 0.3], shared_xaxes=True)
@@ -230,7 +259,7 @@ class FinPlot():
             line=dict(color='rgba(0,0,0,0)'),
             fill='tonexty',
             showlegend=False,
-            fillcolor=get_fill_color(df['label'].iloc[0])))
+            fillcolor= self.get_fill_color(df['label'].iloc[0])))
 
             #add dashed vertical line to each segment
             #fig.add_vline(x=df.index[0], line_width=1, line_dash="dash", line_color="green", row=1, col=1)
@@ -306,24 +335,20 @@ class FinPlot():
 
 if __name__ == '__main__':
     
-    test2 = FinPlot('AMD', start='2020-01-01', end='2022-01-01')
-    # print(test2.symbol)
-    # print(test2.start)
-    # print(test2.end)
-    # print(test2.period)
-    # print(test2.interval)
+    test_df = FinPlot('AMD', start='2020-01-01', end='2022-01-01')
+    
+    #refresh data
+    #test_df.get_data()
+    #test_df.save_data('D:/Temp/StockData/') 
+   
+    #test_df.get_data(default=False, file='D:/Temp/StockData/AMD.csv')
+    test_df.get_data(default=False, folder='D:/Temp/StockData/')
+   
+    #test_df.plot_RSI()
+     
+   
+    test_df.plot_ichimoku()
 
-    #test2.get_data(default=False, file='D:/Temp/StockData/AMD.csv')
-    test2.get_data(default=False, folder='D:/Temp/StockData/')
-    #test2.get_data()
-
-    #test2.plot_RSI()
-
-    print(test2.df)
-
-    #test2.plot_ichimoku()
-
-    #test2.save_data('D:/Temp/StockData/')
-
+    
 
     
