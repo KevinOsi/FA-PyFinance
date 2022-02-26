@@ -9,6 +9,7 @@
 ##################################################
 
 
+from asyncio.windows_events import NULL
 import pandas as pd
 import pandas_ta as ta
 import yfinance as yf
@@ -131,7 +132,7 @@ class FinPlot():
 
 
 
-    def plot_RSI(self, **kwargs):
+    def plot_RSI(self, fig, row, col):
         """
         Retrieves RSI (14) and plots the data based upon 
         
@@ -139,19 +140,22 @@ class FinPlot():
 
         lower limit of 30% indicates Over Sold
 
-
-        keys:
-            time frame    
-
         Args:
-            () - plots all data in data frame
+            fig = a figure object to add our subplot to
 
-            (span = True) plots data within class time span values
-        
+            row = sepcific row to plot to
+
+            col = sepecific col to plot to (typicaly 1)
+
+        Uses:
+            (fig, row, col) - plots all data in data frame
+
+        Returns:
+            fig = existing figure object is returned with updates
         """ 
 
         #create figure object
-        fig = go.Figure()
+        #fig = go.Figure()
         
         #add RSI (14) data to the dataframe
         self.df.ta.rsi(append=True)
@@ -160,20 +164,20 @@ class FinPlot():
         RSI = go.Scatter(x=self.df.index, y=self.df['RSI_14'], line=dict(color='rgba(0,0,255,1)', width=1), name="RSI")
         
         #plot RSI and upper and lower bands
-        fig.add_trace(RSI)
-        fig.add_hline(y=70, line=dict(color='rgba(0,255,0,0.75)', width=1, dash='dot'), name="Over Bought")
-        fig.add_hline(y=30, line=dict(color='rgba(255,0,0,0.75)', width=1, dash='dot'), name="Over Sold")
+        fig.add_trace(RSI, row=row, col=col)
+        fig.add_hline(y=70, line=dict(color='rgba(0,255,0,0.75)', width=1, dash='dot'), name="Over Bought", row=row, col=col)
+        fig.add_hline(y=30, line=dict(color='rgba(255,0,0,0.75)', width=1, dash='dot'), name="Over Sold", row=row, col=col)
 
         #add titles and axis labels
+      
+        fig.update_yaxes(title="RSI index", range=[0,100], row=row, col=col)
 
-        fig.update_layout(title=f"RSI Plot of {self.symbol}")
-        fig.update_yaxes(title="RSI index", range=[0,100])
 
+        #fig.update_layout(height=1000, width=1400)
 
-        fig.update_layout(height=1000, width=1400)
+        #fig.show()
 
-        fig.show()
-
+        return fig
 
 
     def get_fill_color(self, label):
@@ -187,19 +191,20 @@ class FinPlot():
             #returns Red, alpha 20%
             return 'rgba(250,0,0,0.2)'
 
-
-
-    def plot_ichimoku(self, **kwargs):
+  
+    def plot_ichimoku(self, fig, row, col, **kwargs):
         """
         Retrieves Ichimoku Data and plots
         
         keys:
-            forward=True  plot the projected spans
+            forward=True  plot the projected spans [NOT yet implemented]
             
-            timespan=True  plot all data vs limits given
+            timespan=True  plot all data vs limits given [NOT yet implemented]
 
         Args:
-            () - plots all data in data frame
+            fig - subplot figure to plot to
+
+            row - row to plot to 
             
         
         """ 
@@ -233,12 +238,8 @@ class FinPlot():
         #generate working copy of DF for clouds & df1 copy for plotting
         df = self.df.copy()
         df1 = self.df.copy()
-        
-
-        #Create a figure object of 2 subplots        
-        fig = make_subplots(rows=2, cols=1, subplot_titles=(f"Ichimoku Plot of {self.symbol}", "RSI"), row_heights=[0.7, 0.3], shared_xaxes=True)
-
-        #fig = go.Figure()
+       
+    
             
 
         df['label'] = np.where(df['ISA_9'] > df['ISB_26'], 1, 0)
@@ -286,44 +287,63 @@ class FinPlot():
         span_b_fw = go.Scatter(x=df_fw.index, y=df_fw['ISB_26'], opacity=0.5, line=dict(color='rgba(255,0,0,1)', width=1, dash='dot'), name="Span B FW", legendrank=8)
 
         #add each plot to the figure on Subplot 1 (top)
-        fig.add_trace(candle, row=1, col=1)
-        fig.add_trace(baseline, row=1, col=1)
-        fig.add_trace(conversion, row=1, col=1)
-        fig.add_trace(lagging, row=1, col=1)
-        fig.add_trace(span_a, row=1, col=1)
-        fig.add_trace(span_b, row=1, col=1)
-        fig.add_trace(span_a_fw, row=1, col=1)
-        fig.add_trace(span_b_fw, row=1, col=1)
-
-
-        #add RSI to subplot 2 (bottom)
-        RSI = go.Scatter(x=df1.index, y=df1['RSI_14'], line=dict(color='rgba(0,0,255,1)', width=1), name="RSI")
-
-        fig.add_trace(RSI, row=2, col=1)
-        fig.add_hline(y=70, line=dict(color='rgba(0,255,0,0.75)', width=1, dash='dot'), name="Over Bought", row=2, col=1)
-        fig.add_hline(y=30, line=dict(color='rgba(255,0,0,0.75)', width=1, dash='dot'), name="Over Sold", row=2, col=1)
-
+        fig.add_trace(candle, row=row, col=col)
+        fig.add_trace(baseline, row=row, col=col)
+        fig.add_trace(conversion, row=row, col=col)
+        fig.add_trace(lagging, row=row, col=col)
+        fig.add_trace(span_a, row=row, col=col)
+        fig.add_trace(span_b, row=row, col=col)
+        fig.add_trace(span_a_fw, row=row, col=col)
+        fig.add_trace(span_b_fw, row=row, col=col)
 
 
         #add titles and axis labels
         
-        fig.update_yaxes(title="Price in $", row=1, col=1)
-        fig.update_yaxes(title="RSI index", range=[0,100] , row=2, col=1)
-        fig.update_xaxes(row=2, col=1)
+        fig.update_yaxes(title="Price in $", row=row, col=col)
+        
+        return fig
 
+
+    def multi_plot (self, *args, **kwargs):
+        '''
+            work in progress, plot out set of figures as subplots
+
+            set size of plots
+        
+        '''
+        print(f"generating plot of {len(args)} items")
+
+        #PARSE OUT chart names
+        chart_names = list()
+        for i in range(0 , len(args)):
+            #print(i + 1 , "   ", args[i])
+            chart_names.append(f"{args[i]} Plot") 
+
+        #get row hights
+        if 'heights' in kwargs:
+            heights = kwargs['heights']
+        else:
+            #if blank
+            heights = np.ones(len(args), dtype=int ).tolist()
+            
+        
+        #create plot object of subplots of specificed size etc...
+        fig = make_subplots(rows=len(args), cols=1, subplot_titles=chart_names, row_heights=heights, shared_xaxes=True)
+
+        #generate plots
+        # for i in range(0 , len(args)):
+        #     fig = self.plot_ichimoku(fig, i+1, 1)
+
+        fig = self.plot_ichimoku(fig, 1, 1)
+        fig = self.plot_RSI(fig, 2, 1)
+
+
+        #layout 
         fig.update_layout(height=1000, width=1400, showlegend=True)
+                
 
+        #display chart
         fig.show()
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -343,12 +363,12 @@ if __name__ == '__main__':
    
     #test_df.get_data(default=False, file='D:/Temp/StockData/AMD.csv')
     test_df.get_data(default=False, folder='D:/Temp/StockData/')
-   
-    #test_df.plot_RSI()
+       
      
    
-    test_df.plot_ichimoku()
+    #test_df.multi_plot("one", "two", heights=[0.7, 0.3])
 
+    test_df.multi_plot("ICHI", "RSI", heights=[0.7, 0.3])
     
 
     
