@@ -12,6 +12,7 @@
 from asyncio.windows_events import NULL
 import pandas as pd
 import pandas_ta as ta
+#from sklearn.metrics import plot_precision_recall_curve
 import yfinance as yf
 import datetime
 
@@ -131,6 +132,20 @@ class FinPlot():
             print("Couldn't save file")
 
 
+    def get_plot_func(self, name):
+        """
+        returns the function name for the requested chart
+
+        """
+        if name.lower() == "rsi":
+            return self.plot_RSI 
+        elif name.lower() == "ichimoku":
+            return self.plot_ichimoku
+        elif name.lower() == "volume":
+            return self.plot_volume
+        else: 
+            return self.plot_RSI
+
 
     def plot_RSI(self, fig, row, col):
         """
@@ -173,10 +188,6 @@ class FinPlot():
         fig.update_yaxes(title="RSI index", range=[0,100], row=row, col=col)
 
 
-        #fig.update_layout(height=1000, width=1400)
-
-        #fig.show()
-
         return fig
 
 
@@ -192,24 +203,26 @@ class FinPlot():
             return 'rgba(250,0,0,0.2)'
 
   
-    def plot_ichimoku(self, fig, row, col, **kwargs):
+    def plot_ichimoku(self, fig, row, col):
         """
         Retrieves Ichimoku Data and plots
         
         keys:
             forward=True  plot the projected spans [NOT yet implemented]
-            
-            timespan=True  plot all data vs limits given [NOT yet implemented]
+                       
 
         Args:
             fig - subplot figure to plot to
 
-            row - row to plot to 
+            row - row to plot to on fig
+
+            col - col to plot to on fig, usually 1
             
         
         """ 
         
-        ### TODO add in time limits if requested
+        ### TODO Figure out what is adding the slider
+        ### TODO implement check to disable forward span if requested
 
     
     
@@ -229,18 +242,13 @@ class FinPlot():
         #the forward ichimoku span A and B 
         df_fw = pd.DataFrame()
         df_fw = self.df.ta.ichimoku()[1]
-
-
-        #add RSI (14) data to the dataframe
-        self.df.ta.rsi(append=True)
-
+      
 
         #generate working copy of DF for clouds & df1 copy for plotting
         df = self.df.copy()
         df1 = self.df.copy()
        
-    
-            
+                
 
         df['label'] = np.where(df['ISA_9'] > df['ISB_26'], 1, 0)
         df['group'] = df['label'].ne(df['label'].shift()).cumsum()
@@ -251,19 +259,20 @@ class FinPlot():
         for name, data in df:
             dfs.append(data)
 
-        for df in dfs:
-            fig.add_traces(go.Scatter(x=df.index, y=df.ISA_9, opacity=0.5,
-            showlegend=False,
-            line=dict(color='rgba(0,0,0,0)')))
+      
+       
 
-            fig.add_traces(go.Scatter(x=df.index, y=df.ISB_26, opacity=0.5,
+        for df in dfs:
+            fig.add_trace(go.Scatter(x=df.index, y=df.ISA_9, opacity=0.5,
+            showlegend=False,
+            line=dict(color='rgba(0,0,0,0)')), row=row, col=col)
+
+            fig.add_trace(go.Scatter(x=df.index, y=df.ISB_26, opacity=0.5,
             line=dict(color='rgba(0,0,0,0)'),
             fill='tonexty',
             showlegend=False,
-            fillcolor= self.get_fill_color(df['label'].iloc[0])))
-
-            #add dashed vertical line to each segment
-            #fig.add_vline(x=df.index[0], line_width=1, line_dash="dash", line_color="green", row=1, col=1)
+            fillcolor= self.get_fill_color(df['label'].iloc[0])), row=row, col=col)
+            
 
 
 
@@ -301,9 +310,47 @@ class FinPlot():
         
         fig.update_yaxes(title="Price in $", row=row, col=col)
         
+
+
         return fig
 
 
+    
+    def plot_volume(self, fig, row, col):
+        """
+        Retrieves Volume Data and plots it
+        
+        keys:
+            forward=True  plot the projected spans [NOT yet implemented]
+            
+            timespan=True  plot all data vs limits given [NOT yet implemented]
+
+        Args:
+            fig - subplot figure to plot to
+
+            row - row to plot to 
+            
+        
+        """ 
+        #add  data to the dataframe
+        self.df.ta.obv(append=True)
+
+        #generate plots for OBV and volume
+        #obv = go.Scatter(x=self.df.index, y=self.df['OBV'], line=dict(color='rgba(0,0,255,1)', width=1), name="OBV")
+        vol = go.Scatter(x=self.df.index, y=self.df['Volume'], line=dict(color='rgba(0,255,1)', width=1), name="Vol")
+
+        #plot volume and OBV
+        fig.add_trace(vol, row=row, col=col)
+        #fig.add_trace(obv, row=row, col=col)
+
+        #add titles and axis labels
+      
+        fig.update_yaxes(title="Volume and OBV", row=row, col=col)
+
+
+        return fig
+
+    
     def multi_plot (self, *args, **kwargs):
         '''
             work in progress, plot out set of figures as subplots
@@ -311,6 +358,9 @@ class FinPlot():
             set size of plots
         
         '''
+        # TODO  something is up with the spread between charts if there are too many figure it out
+
+
         print(f"generating plot of {len(args)} items")
 
         #PARSE OUT chart names
@@ -330,19 +380,55 @@ class FinPlot():
         #create plot object of subplots of specificed size etc...
         fig = make_subplots(rows=len(args), cols=1, subplot_titles=chart_names, row_heights=heights, shared_xaxes=True)
 
-        #generate plots
-        # for i in range(0 , len(args)):
-        #     fig = self.plot_ichimoku(fig, i+1, 1)
-
-        fig = self.plot_ichimoku(fig, 1, 1)
-        fig = self.plot_RSI(fig, 2, 1)
-
+        #generate plots, get the plot name from args, look up function
+        for i in range(0 , len(args)):
+            plot_type = self.get_plot_func(args[i])
+            fig = plot_type(fig, i+1, 1)
+        
 
         #layout 
         fig.update_layout(height=1000, width=1400, showlegend=True)
-                
 
-        #display chart
+     
+
+        #range slider position and buttons
+        fig.update_layout(
+            xaxis=dict(
+                rangeselector=dict(
+                    buttons=list([
+                        dict(count=1,
+                            label="1m",
+                            step="month",
+                            stepmode="backward"),
+                        dict(count=6,
+                            label="6m",
+                            step="month",
+                            stepmode="backward"),
+                        dict(count=1,
+                            label="1y",
+                            step="year",
+                            stepmode="backward"),
+                        dict(count=3,
+                            label="3y",
+                            step="year",
+                            stepmode="backward"),
+                        dict(count=1,
+                            label="YTD",
+                            step="year",
+                            stepmode="todate"),
+                        dict(step="all")
+                    ])
+                ),
+                rangeslider=dict(
+                    visible=True
+                ),
+                type="date"
+            )
+        )
+
+
+
+        #display Plots
         fig.show()
 
 
@@ -364,11 +450,9 @@ if __name__ == '__main__':
     #test_df.get_data(default=False, file='D:/Temp/StockData/AMD.csv')
     test_df.get_data(default=False, folder='D:/Temp/StockData/')
        
-     
-   
-    #test_df.multi_plot("one", "two", heights=[0.7, 0.3])
+      
+    test_df.multi_plot("ichimoku","rsi", "volume", heights=[1, 1, 1])
+        
 
-    test_df.multi_plot("ICHI", "RSI", heights=[0.7, 0.3])
-    
 
     
