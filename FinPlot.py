@@ -135,14 +135,18 @@ class FinPlot():
     def get_plot_func(self, name):
         """
         returns the function name for the requested chart
-
+        
         """
         if name.lower() == "rsi":
-            return self.plot_RSI 
+            return self.plot_RSI
         elif name.lower() == "ichimoku":
             return self.plot_ichimoku
+        elif name.lower() == "sma":
+            return self.plot_sma
         elif name.lower() == "volume":
             return self.plot_volume
+        elif name.lower() == "macd":
+            return self.plot_macd    
         else: 
             return self.plot_RSI
 
@@ -169,8 +173,6 @@ class FinPlot():
             fig = existing figure object is returned with updates
         """ 
 
-        #create figure object
-        #fig = go.Figure()
         
         #add RSI (14) data to the dataframe
         self.df.ta.rsi(append=True)
@@ -220,8 +222,7 @@ class FinPlot():
             
         
         """ 
-        
-        ### TODO Figure out what is adding the slider
+             
         ### TODO implement check to disable forward span if requested
 
     
@@ -309,11 +310,10 @@ class FinPlot():
         #add titles and axis labels
         
         fig.update_yaxes(title="Price in $", row=row, col=col)
+        fig.update_layout(xaxis_rangeslider_visible=False)
         
 
-
         return fig
-
 
     
     def plot_volume(self, fig, row, col):
@@ -345,12 +345,95 @@ class FinPlot():
 
         #add titles and axis labels
       
-        fig.update_yaxes(title="Volume and OBV", row=row, col=col)
+        fig.update_yaxes(title="OBV", row=row, col=col)
 
 
         return fig
 
     
+    def plot_sma(self, fig, row, col):
+        """
+        generate simple moving averages plot with 50 and 200 day intervals
+        """
+
+
+
+        #SMA Plot for 50 and 200 day SMA
+
+        self.df.ta.sma(50, append=True)
+        self.df.ta.sma(200, append=True)
+
+        #get the nicer looking trending candle sticks
+        hadf = ta.ha(open_= self.df.Open, close = self.df.Close, high=self.df.High, low=self.df.Low)
+
+
+        #create plot objects
+        SMA50 = go.Scatter(x=self.df.index, y=self.df['SMA_50'], line=dict(color='rgba(0,0,255,1)', width=1), name="SMA 50 day")
+        SMA200 = go.Scatter(x=self.df.index, y=self.df['SMA_200'], line=dict(color='rgba(255,0,0,1)', width=1), name="SMA 200 day")
+        candles = go.Candlestick(x = hadf.index, open = hadf.HA_open, high= hadf.HA_high, low=hadf.HA_low, close= hadf.HA_close, name='Candles')
+
+        #Add traces to plot
+        fig.add_trace(SMA50, row=row, col=col)
+        fig.add_trace(SMA200, row=row, col=col)
+        fig.add_trace(candles, row=row, col=col)
+
+
+        #formatting, nuke candlestick's range slider
+        fig.update_yaxes(title="$", row=row, col=col)
+        fig.update_layout(xaxis_rangeslider_visible=False)
+
+
+        #return fig
+        return fig
+
+
+    def plot_macd(self, fig, row, col):
+        """
+        generate MACD plot with historgram
+
+        Default Inputs: fast=12, slow=26, signal=9
+
+        EMA = Exponential Moving Average
+
+        MACD = EMA(close, fast) - EMA(close, slow)
+
+        Signal = EMA(MACD, signal)
+
+        Histogram = MACD - Signal
+
+        """
+
+        #Generate data for MACD
+
+        self.df.ta.macd(append=True)
+
+        barcol = np.where(self.df['MACDh_12_26_9'] >= 0, 'green' , 'red')
+
+
+        #create plot objects
+        MACD = go.Scatter(x=self.df.index, y=self.df['MACD_12_26_9'], line=dict(color='rgba(0,0,255,1)', width=1), name="MACD")
+        signal = go.Scatter(x=self.df.index, y=self.df['MACDs_12_26_9'], line=dict(color='rgba(255,165,0,1)', width=1), name="Signal")
+        histogram = go.Bar(x=self.df.index, y=self.df['MACDh_12_26_9'], marker={"color": barcol }, name="Histogram")
+
+
+
+        #Add traces to plot
+        fig.add_trace(MACD, row=row, col=col)
+        fig.add_trace(signal, row=row, col=col)
+        fig.add_trace(histogram, row=row, col=col)
+        fig.add_hline(y=0, line=dict(color='rgba(0,0,0,200.75)', width=1, dash='dot'), name="baseline", row=row, col=col)
+
+
+        #formatting, nuke candlestick's range slider
+        fig.update_yaxes(title="MACD", row=row, col=col)
+
+
+
+        #return fig
+        return fig
+
+
+
     def multi_plot (self, *args, **kwargs):
         '''
             work in progress, plot out set of figures as subplots
@@ -378,7 +461,7 @@ class FinPlot():
             
         
         #create plot object of subplots of specificed size etc...
-        fig = make_subplots(rows=len(args), cols=1, subplot_titles=chart_names, row_heights=heights, shared_xaxes=True)
+        fig = make_subplots(rows=len(args), cols=1, subplot_titles=chart_names, row_heights=heights, shared_xaxes=True, vertical_spacing= 0.05)
 
         #generate plots, get the plot name from args, look up function
         for i in range(0 , len(args)):
@@ -387,7 +470,7 @@ class FinPlot():
         
 
         #layout 
-        fig.update_layout(height=1000, width=1400, showlegend=True)
+        fig.update_layout(height=1000, width=1400, showlegend=True, title=f"Plots for {self.symbol}")
 
      
 
@@ -420,9 +503,8 @@ class FinPlot():
                     ])
                 ),
                 rangeslider=dict(
-                    visible=True
-                ),
-                type="date"
+                    visible=False
+                )
             )
         )
 
@@ -451,7 +533,7 @@ if __name__ == '__main__':
     test_df.get_data(default=False, folder='D:/Temp/StockData/')
        
       
-    test_df.multi_plot("ichimoku","rsi", "volume", heights=[1, 1, 1])
+    test_df.multi_plot("macd", "rsi", "volume", heights=[1, 1, 1])
         
 
 
