@@ -6,9 +6,9 @@ My basic plotting and analysis library for fiance
 ## Features:
 
 * data pull from CSV or yahoo finance
-* Plotting for RSI, Ichimoku
-* 
-* 
+* save to CSV
+* Plotting for RSI, Ichimoku, SMA, MACD
+* Multi-plot for multiple technical indicators
 
 
 ## Requirements:
@@ -20,8 +20,6 @@ My basic plotting and analysis library for fiance
 	
 ## TODO:
 * create an accompanying jupyter notebook to help with usage
-* Complete Ichimoku plots function
-* Add in data save functions
 * Portfolio analysis functionality
 * additional plots that seem to help
-* ??? 
+* Add in more trade signals to relevant indicators to assist with decision making and interpretation
