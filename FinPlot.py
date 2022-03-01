@@ -9,13 +9,12 @@
 ##################################################
 
 
-from asyncio.windows_events import NULL
 import pandas as pd
 import pandas_ta as ta
-#from sklearn.metrics import plot_precision_recall_curve
 import yfinance as yf
 import datetime
 
+#Not using now
 #import matplotlib.pyplot as plt
 
 import numpy as np
@@ -178,7 +177,7 @@ class FinPlot():
         self.df.ta.rsi(append=True)
 
         #create plot object with RSI data
-        RSI = go.Scatter(x=self.df.index, y=self.df['RSI_14'], line=dict(color='rgba(0,0,255,1)', width=1), name="RSI")
+        RSI = go.Scatter(x=self.df.index, y=self.df['RSI_14'], line=dict(color='rgba(0,0,255,1)', width=1), name="RSI", legendgroup = "RSI", legendgrouptitle_text="RSI Plot")
         
         #plot RSI and upper and lower bands
         fig.add_trace(RSI, row=row, col=col)
@@ -188,7 +187,7 @@ class FinPlot():
         #add titles and axis labels
       
         fig.update_yaxes(title="RSI index", range=[0,100], row=row, col=col)
-
+      
 
         return fig
 
@@ -283,18 +282,18 @@ class FinPlot():
         hadf = ta.ha(open_= df1.Open, close = df1.Close, high=df1.High, low=df1.Low)
 
         #create Plot objects
-        candle = go.Candlestick(x = hadf.index, open = hadf.HA_open, high= hadf.HA_high, low=hadf.HA_low, close= hadf.HA_close, name='Candles', legendrank=6)
-        baseline = go.Scatter(x=df1.index, y=df1['IKS_26'],line=dict(color='rgba(0,0,0,0.5)', width=1), name="Baseline", legendrank=1)
-        conversion = go.Scatter(x=df1.index, y=df1['ITS_9'], opacity=0.5, line=dict(color='rgba(255,100,0,0.5)', width=1), name="Conversion", legendrank=2)
-        lagging = go.Scatter(x=df1.index, y=df1['ICS_26'], opacity=0.5, line=dict(color='rgba(0,0,255,0.5)', width=1), name="Lagging", legendrank=3)
-        span_a = go.Scatter(x=df1.index, y=df1['ISA_9'], opacity=0.5, line=dict(color='rgba(0,255,0,0.5)', width=1, dash='dot'), name="Span A", legendrank=4)
-        span_b = go.Scatter(x=df1.index, y=df1['ISB_26'], opacity=0.5, line=dict(color='rgba(255,0,0,0.5)', width=1, dash='dot'), name="Span B", legendrank=5)
+        candle = go.Candlestick(x = hadf.index, open = hadf.HA_open, high= hadf.HA_high, low=hadf.HA_low, close= hadf.HA_close, name='Candles', legendgroup = "Ichimoku", legendgrouptitle_text="Ichiomoku Plot")
+        baseline = go.Scatter(x=df1.index, y=df1['IKS_26'],line=dict(color='rgba(0,0,0,0.5)', width=1), name="Baseline", legendgroup = "Ichimoku")
+        conversion = go.Scatter(x=df1.index, y=df1['ITS_9'], opacity=0.5, line=dict(color='rgba(255,100,0,0.5)', width=1), name="Conversion", legendgroup = "Ichimoku")
+        lagging = go.Scatter(x=df1.index, y=df1['ICS_26'], opacity=0.5, line=dict(color='rgba(0,0,255,0.5)', width=1), name="Lagging", legendgroup = "Ichimoku")
+        span_a = go.Scatter(x=df1.index, y=df1['ISA_9'], opacity=0.5, line=dict(color='rgba(0,255,0,0.5)', width=1, dash='dot'), name="Span A", legendgroup = "Ichimoku")
+        span_b = go.Scatter(x=df1.index, y=df1['ISB_26'], opacity=0.5, line=dict(color='rgba(255,0,0,0.5)', width=1, dash='dot'), name="Span B", legendgroup = "Ichimoku")
 
 
         #plot foward spans
 
-        span_a_fw = go.Scatter(x=df_fw.index, y=df_fw['ISA_9'], opacity=0.5, line=dict(color='rgba(0,255,0,1)', width=1, dash='dot'), name="Span A FW", legendrank=7) 
-        span_b_fw = go.Scatter(x=df_fw.index, y=df_fw['ISB_26'], opacity=0.5, line=dict(color='rgba(255,0,0,1)', width=1, dash='dot'), name="Span B FW", legendrank=8)
+        span_a_fw = go.Scatter(x=df_fw.index, y=df_fw['ISA_9'], opacity=0.5, line=dict(color='rgba(0,255,0,1)', width=1, dash='dot'), name="Span A FW", legendgroup = "Ichimoku") 
+        span_b_fw = go.Scatter(x=df_fw.index, y=df_fw['ISB_26'], opacity=0.5, line=dict(color='rgba(255,0,0,1)', width=1, dash='dot'), name="Span B FW", legendgroup = "Ichimoku")
 
         #add each plot to the figure on Subplot 1 (top)
         fig.add_trace(candle, row=row, col=col)
@@ -336,12 +335,12 @@ class FinPlot():
         self.df.ta.obv(append=True)
 
         #generate plots for OBV and volume
-        #obv = go.Scatter(x=self.df.index, y=self.df['OBV'], line=dict(color='rgba(0,0,255,1)', width=1), name="OBV")
-        vol = go.Scatter(x=self.df.index, y=self.df['Volume'], line=dict(color='rgba(0,255,1)', width=1), name="Vol")
+        obv = go.Scatter(x=self.df.index, y=self.df['OBV'], line=dict(color='rgba(0,0,255,1)', width=1), name="OBV", legendgroup = "Volume", legendgrouptitle_text="Volume Plot")
+        #vol = go.Scatter(x=self.df.index, y=self.df['Volume'], line=dict(color='rgba(0,255,1)', width=1), name="Vol")
 
         #plot volume and OBV
-        fig.add_trace(vol, row=row, col=col)
-        #fig.add_trace(obv, row=row, col=col)
+        #fig.add_trace(vol, row=row, col=col)
+        fig.add_trace(obv, row=row, col=col)
 
         #add titles and axis labels
       
@@ -355,8 +354,7 @@ class FinPlot():
         """
         generate simple moving averages plot with 50 and 200 day intervals
         """
-
-
+       
 
         #SMA Plot for 50 and 200 day SMA
 
@@ -366,18 +364,30 @@ class FinPlot():
         #get the nicer looking trending candle sticks
         hadf = ta.ha(open_= self.df.Open, close = self.df.Close, high=self.df.High, low=self.df.Low)
 
+        #create markers for crosses
+       
+        signals = pd.DataFrame(index=self.df.index)
+        signals['signal'] = np.where(self.df['SMA_50'] > self.df['SMA_200'], 1.0, 0.0)
+        signals['positions'] = signals['signal'].diff()
+    
+
 
         #create plot objects
-        SMA50 = go.Scatter(x=self.df.index, y=self.df['SMA_50'], line=dict(color='rgba(0,0,255,1)', width=1), name="SMA 50 day")
-        SMA200 = go.Scatter(x=self.df.index, y=self.df['SMA_200'], line=dict(color='rgba(255,0,0,1)', width=1), name="SMA 200 day")
-        candles = go.Candlestick(x = hadf.index, open = hadf.HA_open, high= hadf.HA_high, low=hadf.HA_low, close= hadf.HA_close, name='Candles')
+        SMA50 = go.Scatter(x=self.df.index, y=self.df['SMA_50'], line=dict(color='rgba(0,0,255,1)', width=1), name="SMA 50 day", legendgroup = "SMA" , legendgrouptitle_text="SMA Plot")
+        SMA200 = go.Scatter(x=self.df.index, y=self.df['SMA_200'], line=dict(color='rgba(255,0,0,1)', width=1), name="SMA 200 day", legendgroup = "SMA")
+        candles = go.Candlestick(x = hadf.index, open = hadf.HA_open, high= hadf.HA_high, low=hadf.HA_low, close= hadf.HA_close, name='Candles', legendgroup = "SMA")
+        buys = go.Scatter(x=signals.loc[signals.positions == 1.0].index, y=self.df.SMA_50.loc[signals.positions == 1.0], mode='markers', marker=dict(color='rgba(0,255,0,.8)', size=20), name='Buys - Golden', legendgroup='SMA') 
+        sells= go.Scatter(x=signals.loc[signals.positions == -1.0].index, y=self.df.SMA_50.loc[signals.positions == -1.0], mode='markers', marker=dict(color='rgba(255,0,0,.8)', size=20), name='Sells - Death', legendgroup='SMA') 
+
 
         #Add traces to plot
         fig.add_trace(SMA50, row=row, col=col)
         fig.add_trace(SMA200, row=row, col=col)
         fig.add_trace(candles, row=row, col=col)
-
-
+        fig.add_trace(buys, row=row, col=col)
+        fig.add_trace(sells, row=row, col=col)
+        
+       
         #formatting, nuke candlestick's range slider
         fig.update_yaxes(title="$", row=row, col=col)
         fig.update_layout(xaxis_rangeslider_visible=False)
@@ -411,9 +421,9 @@ class FinPlot():
 
 
         #create plot objects
-        MACD = go.Scatter(x=self.df.index, y=self.df['MACD_12_26_9'], line=dict(color='rgba(0,0,255,1)', width=1), name="MACD")
-        signal = go.Scatter(x=self.df.index, y=self.df['MACDs_12_26_9'], line=dict(color='rgba(255,165,0,1)', width=1), name="Signal")
-        histogram = go.Bar(x=self.df.index, y=self.df['MACDh_12_26_9'], marker={"color": barcol }, name="Histogram")
+        MACD = go.Scatter(x=self.df.index, y=self.df['MACD_12_26_9'], line=dict(color='rgba(0,0,255,1)', width=1), name="MACD", legendgroup = "MACD", legendgrouptitle_text="MACD Plot")
+        signal = go.Scatter(x=self.df.index, y=self.df['MACDs_12_26_9'], line=dict(color='rgba(255,165,0,1)', width=1), name="Signal", legendgroup = "MACD")
+        histogram = go.Bar(x=self.df.index, y=self.df['MACDh_12_26_9'], marker={"color": barcol }, name="Histogram", legendgroup = "MACD")
 
 
 
@@ -426,7 +436,7 @@ class FinPlot():
 
         #formatting, nuke candlestick's range slider
         fig.update_yaxes(title="MACD", row=row, col=col)
-
+        
 
 
         #return fig
@@ -436,13 +446,26 @@ class FinPlot():
 
     def multi_plot (self, *args, **kwargs):
         '''
-            work in progress, plot out set of figures as subplots
+            Plot list of charts based on args given
 
-            set size of plots
-        
+            OPTIONS:
+
+            "SMA" - a 50 and 200 day SMA
+
+            "MACD" - MACD plot with histogram
+
+            "Ichimoku" - ichimoku plot
+
+            "RSI" - an RSI plot with windows at 70/30
+
+            "volume" = volume plot using OBV
+
+            Usage:
+
+            multi_plot("ichimoku", "sma", "RSI", heights=[1, .5, 1])
+
         '''
-        # TODO  something is up with the spread between charts if there are too many figure it out
-
+       
 
         print(f"generating plot of {len(args)} items")
 
@@ -523,7 +546,8 @@ class FinPlot():
 
 if __name__ == '__main__':
     
-    test_df = FinPlot('AMD', start='2020-01-01', end='2022-01-01')
+    #test_df = FinPlot('AMD', start='2020-01-01', end='2022-01-01')
+    test_df = FinPlot('TSLA')
     
     #refresh data
     #test_df.get_data()
@@ -533,7 +557,7 @@ if __name__ == '__main__':
     test_df.get_data(default=False, folder='D:/Temp/StockData/')
        
       
-    test_df.multi_plot("macd", "rsi", "volume", heights=[1, 1, 1])
+    test_df.multi_plot("sma")
         
 
 
