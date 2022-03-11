@@ -23,3 +23,7 @@ My basic plotting and analysis library for fiance
 * Portfolio analysis functionality
 * additional plots that seem to help
 * Add in more trade signals to relevant indicators to assist with decision making and interpretation
+* Method to pass along custom settings to each plot routine
+* Method to use each plot routine solo with no multiplot call
+
+* investigate FFT analysis to find fundamentals for SMA or other charting

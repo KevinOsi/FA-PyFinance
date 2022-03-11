@@ -146,6 +146,8 @@ class FinPlot():
             return self.plot_volume
         elif name.lower() == "macd":
             return self.plot_macd    
+        elif name.lower() == "bollinger":
+            return self.plot_bollinger   
         else: 
             return self.plot_RSI
 
@@ -443,6 +445,68 @@ class FinPlot():
         return fig
 
 
+    def plot_bollinger(self, fig, row, col):
+        """
+        generate Bollinger Bands 
+
+        Default Inputs:
+
+        length=5, std=2, mamode="sma", ddof=0
+
+        EMA = Exponential Moving Average
+
+        SMA = Simple Moving Average
+
+        STDEV = Standard Deviation
+
+        stdev = STDEV(close, length, ddof)
+
+        if "ema":   MID = EMA(close, length)
+
+        else:   MID = SMA(close, length)
+
+        LOWER = MID - std * stdev
+
+        UPPER = MID + std * stdev
+
+
+        generates: lower, mid, upper, bandwidth, and percent columns.
+        """
+
+        #Generate data for Bollinger Bands
+        self.df.ta.bbands(append=True)
+
+        #get the nicer looking trending candle sticks
+        hadf = ta.ha(open_= self.df.Open, close = self.df.Close, high=self.df.High, low=self.df.Low)
+
+
+        #create plot objects
+        BBM = go.Scatter(x=self.df.index, y=self.df['BBM_5_2.0'], line=dict(color='rgba(0,0,255,.50)', width=1), name="Mid", legendgroup = "Bollinger", legendgrouptitle_text="Bollinger Bands")
+
+        BBL = go.Scatter(x=self.df.index, y=self.df['BBL_5_2.0'], line=dict(color='rgba(255,0,0,1)', width=1, dash='dot'), name="Lower", legendgroup = "Bollinger")
+        BBU = go.Scatter(x=self.df.index, y=self.df['BBU_5_2.0'], line=dict(color='rgba(0,255,0,1)', width=1, dash='dot'), name="Upper", fill='tonexty', fillcolor='rgba(0,0,255,.05)', legendgroup = "Bollinger")
+
+
+        candles = go.Candlestick(x = hadf.index, open = hadf.HA_open, high= hadf.HA_high, low=hadf.HA_low, close= hadf.HA_close, name='Candles', legendgroup = "Bollinger")
+
+
+
+        #Add traces to plot
+        fig.add_trace(candles, row=row, col=col)
+        fig.add_trace(BBL, row=row, col=col)
+        fig.add_trace(BBU, row=row, col=col)
+        fig.add_trace(BBM, row=row, col=col)
+
+
+        #formatting, nuke candlestick's range slider
+        fig.update_yaxes(title="$", row=row, col=col)
+        fig.update_layout(xaxis_rangeslider_visible=False)
+
+
+
+        #return fig
+        return fig
+
 
     def multi_plot (self, *args, **kwargs):
         '''
@@ -457,6 +521,8 @@ class FinPlot():
             "Ichimoku" - ichimoku plot
 
             "RSI" - an RSI plot with windows at 70/30
+
+            "bollinger" - Bollinger bands with 20 day SMA
 
             "volume" = volume plot using OBV
 
@@ -473,7 +539,7 @@ class FinPlot():
         chart_names = list()
         for i in range(0 , len(args)):
             #print(i + 1 , "   ", args[i])
-            chart_names.append(f"{args[i]} Plot") 
+            chart_names.append(f"{args[i].capitalize()} Plot") 
 
         #get row hights
         if 'heights' in kwargs:
@@ -557,7 +623,7 @@ if __name__ == '__main__':
     test_df.get_data(default=False, folder='D:/Temp/StockData/')
        
       
-    test_df.multi_plot("sma")
+    test_df.multi_plot("bollinger", "rsi")
         
 
 
